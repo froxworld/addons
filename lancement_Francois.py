@@ -47,7 +47,8 @@ class Positionnement:  # Définition de notre classe Positionnement
     z = 0
 
     def commentaire(self):
-        print('positionnnement de l objet en ({0},{1},{2})'.format(self.x, self.y, self.z))
+        a = 0
+        # print('positionnnement de l objet en ({0},{1},{2})'.format(self.x, self.y, self.z))
 
     def __init__(self, position_x, position_y, position_z):  # Notre méthode constructeur
         """Pour l'instant, on ne va définir qu'un seul attribut"""
@@ -98,23 +99,22 @@ class Vaisseau:  # Défintion de la classe vaisseau
 
     affiche = classmethod(affiche)
 
-    def ajoutePiece(self, piece):
-        self.liste_des_pieces.append(piece)
-        print('la piece {0} vient d etre ajoutee à la liste {1} des pieces du vaisseau '.format(piece,
-                                                                                                self.liste_des_pieces))
+    def ajoutePiece(self, nom, piece, position):
+        self.liste_des_pieces.append((nom, piece, position))
+        print('{0} {1} est ajoutee à la position {2}'.format(nom, piece.genre, position))
 
-    def suprimePiece(cls, piece):
-        cls.liste_des_pieces.remove(piece)
-        print('la piece {0} vient est suprimee de la liste, il reste {1} pieces du vaisseau '.format(piece,
-                                                                                                     cls.liste_des_pieces))
+    def suprimePiece(self, nom, piece, position):
+        self.liste_des_pieces.remove((nom, piece, position))
+        print('{0} {1} est enlevee à la position {2}'.format(nom, piece.genre, position))
 
 
 class Piece:
     nom = ''
     genre = ''
+    position = ''
 
     def creation(self):
-        print('votre piece de nom {0} et de genre {1} vient d etre cree'.format(self.nom, self.genre))
+        print('La piece de nom {0} et de genre {1} vient d etre cree'.format(self.nom, self.genre))
 
     def __init__(self, nom, genre):
         self.nom = nom
@@ -130,31 +130,36 @@ def nettoyagedeLaScene():
     bpy.ops.object.delete()
 
 
+def creationBiseau():
+    context = bpy.context
+    obj = context.active_object
+    # bpy.ops.object.editmode_toggle()
+    bevel_modifier = obj.modifiers.new('Bevel', 'BEVEL')
+    bevel_modifier.width = uniform(5, 20)
+    bevel_modifier.offset_type = 'PERCENT'
+    bevel_modifier.segments = 2
+    bevel_modifier.profile = 0.25
+    bevel_modifier.limit_method = 'NONE'
+
+
 def ajouteForme(nom, taille, position, piece, type):
     if type == GenrePiece.CUBE:
         bpy.ops.mesh.primitive_cube_add(location=position)
-        context = bpy.context
-        obj = context.active_object
-        mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
-
-        bpy.ops.object.editmode_toggle()
-        bevel_modifier = obj.modifiers.new('Bevel', 'BEVEL')
-        bevel_modifier.width = uniform(5, 20)
-        bevel_modifier.offset_type = 'PERCENT'
-        bevel_modifier.segments = 2
-        bevel_modifier.profile = 0.25
-        bevel_modifier.limit_method = 'NONE'
+        creationBiseau()
+        vaisseau1.ajoutePiece(nom, piece, position)
 
     if type == GenrePiece.CYLINDRE:
-        bpy.ops.mesh.primitive_cube_add(location=position)
+        bpy.ops.mesh.primitive_cylinder_add(location=position)
+        creationBiseau()
+        vaisseau1.ajoutePiece(nom, piece, position)
 
     if type == GenrePiece.BOULE:
         bpy.ops.mesh.primitive_uv_sphere_add(radius=tailleBoule, enter_editmode=False, location=position)
+        vaisseau1.ajoutePiece(nom, piece, position)
 
     bpy.context.active_object.name = nom
-    if type!= GenrePiece.BOULE:
+    if type != GenrePiece.BOULE:
         bpy.data.objects[nom].scale = taille
-
 
 
 def ajouteMilieu(position1, position2):
@@ -163,6 +168,8 @@ def ajouteMilieu(position1, position2):
     intermediare = int((a + b) / 2)
     return (intermediare)
 
+def aleatoire():
+    return randint(1,5)
 
 # -----------------------nettoyage de la console-----------------
 
@@ -178,22 +185,29 @@ vaisseau1.affiche()
 
 piece1 = Piece('cube_1', GenrePiece.CUBE)
 piece2 = Piece('cylinde_2', GenrePiece.CYLINDRE)
+piece3 = Piece('boule_3', GenrePiece.BOULE)
 
-vaisseau1.ajoutePiece(piece1)
-#
-liste_piece = [1, 2, 3, 4, 5, 6]
+liste_piece = range(50)
+
 for piece in liste_piece:
     # creation de position de test
-    taille1 = (10, 12, 3)
-    position1 = Positionnement(10 * piece * Positionnement.coordonneeAleatoire(Positionnement, 2, 5), 1, 1)
-    taille2 = (5, 5, 5)
-    tailleBoule = Positionnement.coordonneeAleatoire(Positionnement, 1, 10)
+    taille1 = (aleatoire(), aleatoire(), aleatoire())
+    taille2 = (5*aleatoire(), 5*aleatoire(), 5*aleatoire())
+    position1 = Positionnement(3*piece, 0, 0)
+    if (aleatoire()>1):
+        ajouteForme(str(piece), taille1, position1.coordonnee(), piece1, GenrePiece.CUBE)
+    else:
+        ajouteForme(str(piece), taille2, (position1.coordonnee()), piece2, GenrePiece.CYLINDRE)
 
-    position2 = Positionnement(5 * piece * Positionnement.coordonneeAleatoire(Positionnement, 1, 3), 1, 1)
-    ajouteForme(str(piece), taille1, position1.coordonnee(), piece1, GenrePiece.CUBE)
-    ajouteForme(str(piece), taille2, (position2.coordonnee()), piece2, GenrePiece.CYLINDRE)
-    position3 = ajouteMilieu(position1, position2)
-    ajouteForme(str(piece), tailleBoule, (position3, position1.rendY(), position1.rendZ()), piece2, GenrePiece.BOULE)
+
+    # taille2 = (1, 1, 1)
+    # tailleBoule = Positionnement.coordonneeAleatoire(Positionnement, 1, 10)
+    #
+    # position2 = Positionnement(5 * piece * Positionnement.coordonneeAleatoire(Positionnement, 1, 3), 1, 1)
+    #
+    #
+    # position3 = ajouteMilieu(position1, position2)
+    # ajouteForme(str(piece), tailleBoule, (position3, position1.rendY(), position1.rendZ()), piece3, GenrePiece.BOULE)
 
 # affichage des infos d'un objet
 print(vaisseau1.__dict__)
