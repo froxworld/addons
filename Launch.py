@@ -1,5 +1,4 @@
 import bpy
-from ObjectCreator import createCube, createSquarePlane
 from enum import Enum
 from abc import abstractmethod
 
