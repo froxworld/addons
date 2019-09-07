@@ -1,12 +1,17 @@
 import menu_Francois
 import os
 import bpy
+import platform
 from enum import Enum
 
 
 # -----------------------nettoyage de la console-----------------
 def nettoyageConsole():
-    os.system('clear')
+    plateforme = platform.system()
+    if (plateforme == 'darwin' || platform== 'linux'):
+        os.system('clear')
+    else:
+        os.system('cls')
 
 
 class GenreVaisseau(Enum):  # print(GenreVaisseau(1),GenreVaisseau(1).value, GenreVaisseau(1).name))
@@ -152,6 +157,7 @@ taille2 = (5, 5, 5)
 
 piece1 = Piece('cube_1', GenrePiece.CUBE)
 piece2 = Piece('cylinde_2', GenrePiece.CYLINDRE)
+
 
 vaisseau1.ajoutePiece(piece1)
 
