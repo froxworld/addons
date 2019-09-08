@@ -2,6 +2,7 @@ import menu_Francois
 import os
 import bpy
 import platform
+import menu_Francois
 
 from enum import Enum
 from random import randint, uniform
@@ -176,20 +177,20 @@ def creationBiseau():
     bevel_modifier.limit_method = 'NONE'
 
 
-def ajouteForme(nom, taille, position, piece):
+def ajouteForme(vaisseau, nom, taille, position, piece):
     if piece.genre == GenrePiece.CUBE:
         bpy.ops.mesh.primitive_cube_add(location=position, rotation=(0, aleatoire(), 0))
         creationBiseau()
-        vaisseau1.ajoutePiece(nom, piece, position)
+        vaisseau.ajoutePiece(nom, piece, position)
 
     if piece.genre == GenrePiece.CYLINDRE:
         bpy.ops.mesh.primitive_cylinder_add(location=position, rotation=(0, aleatoire(), 0))
         creationBiseau()
-        vaisseau1.ajoutePiece(nom, piece, position)
+        vaisseau.ajoutePiece(nom, piece, position)
 
     if piece.genre == GenrePiece.SPHERE:
         bpy.ops.mesh.primitive_uv_sphere_add(radius=aleatoire(), enter_editmode=False, location=position)
-        vaisseau1.ajoutePiece(nom, piece, position)
+        vaisseau.ajoutePiece(nom, piece, position)
 
     if piece.genre == GenrePiece.POINTE:
         bpy.ops.mesh.primitive_cone_add(vertices=aleatoire(), radius1=aleatoire(), radius2=aleatoire(), depth=2,
@@ -222,41 +223,47 @@ def creationCanon(tailleTourelle, formeTourelle, nombreCanon, tailleCanon, place
         print('creation des canon à faire')
 
 
-def genereVaisseau(genre, nombre, piece1, piece2, positiony, positionz, espacement=5, grandissement=2):
+def genereVaisseau(vaisseau,genre, nombre, piece1, piece2, positiony, positionz, espacement=5, grandissement=2):
     liste_piece = range(nombre)
     for piece in liste_piece:
         print('piece {0}'.format(genre))
         taille1 = (aleatoire(), aleatoire(), aleatoire())
         taille2 = (aleatoire(), grandissement * aleatoire(), aleatoire())
         position1 = Positionnement(espacement * piece, positiony, positionz)
-        ajouteForme(str(piece), taille1, position1.coordonnee(), piece1)
-        ajouteForme(str(piece), taille2, position1.coordonnee(), piece2)
+        ajouteForme(vaisseau,str(piece), taille1, position1.coordonnee(), piece1)
+        ajouteForme(vaisseau, str(piece), taille2, position1.coordonnee(), piece2)
+
+
+def tout():
+    nettoyageConsole()
+    nettoyagedeLaScene()
+
+    # creation d un premier vaisseau
+    vaisseau1 = Vaisseau('test1', GenreVaisseau.AIR)
+    vaisseau1.affiche()
+
+    piece1 = Piece('cube', GenrePiece.CUBE)
+    piece2 = Piece('pointe', GenrePiece.POINTE)
+    piece3 = Piece('isosphere', GenrePiece.ICOSPHERE)
+    piece4 = Piece('pyramide', GenrePiece.PYRAMIDE)
+    piece5 = Piece('cylindre', GenrePiece.CYLINDRE)
+    piece6 = Piece('sphere', GenrePiece.SPHERE)
+
+    genereVaisseau(vaisseau1, GenreVaisseau.AIR, 20, piece1, piece5, 0, 0)
+    genereVaisseau(vaisseau1, GenreVaisseau.EAU, 20, piece3, piece4, 0, 40, 8)
+    genereVaisseau(vaisseau1, GenreVaisseau.TERRE, 20, piece1, piece2, 100, 40)
+    genereVaisseau(vaisseau1, GenreVaisseau.FEU, 20, piece3, piece6, 100, 0, 3, 3)
+
+    # creation de pieces test
+
+    # affichage des infos d'un objet
+    print(vaisseau1.__dict__)
 
 
 # -----------------------nettoyage de la console-----------------
 
-# -------------------------debut du main-------------------------
-nettoyageConsole()
-nettoyagedeLaScene()
+# -------------------------debut du main ------------------------
+add_Ons = menu_Francois.addons
+print('-----------------------addon --------------------{0}'.format(add_Ons))
 
-# creation d un premier vaisseau
-vaisseau1 = Vaisseau('test1', GenreVaisseau.AIR)
-vaisseau1.affiche()
-
-piece1 = Piece('cube', GenrePiece.CUBE)
-piece2 = Piece('pointe', GenrePiece.POINTE)
-piece3 = Piece('isosphere', GenrePiece.ICOSPHERE)
-piece4 = Piece('pyramide', GenrePiece.PYRAMIDE)
-piece5 = Piece('cylindre', GenrePiece.CYLINDRE)
-piece6 = Piece('sphere', GenrePiece.SPHERE)
-
-genereVaisseau(GenreVaisseau.AIR, 20, piece1, piece5, 0, 0)
-genereVaisseau(GenreVaisseau.EAU, 20, piece3, piece4, 0, 40, 8)
-genereVaisseau(GenreVaisseau.TERRE, 20, piece1, piece2, 100, 40)
-genereVaisseau(GenreVaisseau.FEU, 20, piece3, piece6, 100, 0, 3, 3)
-
-# creation de pieces test
-
-
-# affichage des infos d'un objet
-print(vaisseau1.__dict__)
+tout()
