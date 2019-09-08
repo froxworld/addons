@@ -35,28 +35,27 @@ class GenrePiece(Enum):
     POINTE = 8
     ICOSPHERE = 9
 
+
 class Placement(Enum):
-    HAUT =1
-    BAS =2
-    DROITE =3
-    GAUCHE =4
-    ALEATOIRE =5
+    HAUT = 1
+    BAS = 2
+    DROITE = 3
+    GAUCHE = 4
+    ALEATOIRE = 5
+
 
 class FormeTourelle(Enum):
-    SPHERIQUE =1
-    CUBIQUE =2
-    DEMISPHERIQUE =3
-    POINTUE =4
+    SPHERIQUE = 1
+    CUBIQUE = 2
+    DEMISPHERIQUE = 3
+    POINTUE = 4
 
 
-
-
-class Tourelle: # definit tous les attributs des tourcelle
-    x=0
-    y=0
-    z=0
-    forme=''
-
+class Tourelle:  # definit tous les attributs des tourcelle
+    x = 0
+    y = 0
+    z = 0
+    forme = ''
 
     def __init__(self, position_x, position_y, position_z):  # Notre méthode constructeur
         """Pour l'instant, on ne va définir qu'un seul attribut"""
@@ -67,7 +66,6 @@ class Tourelle: # definit tous les attributs des tourcelle
 
     def coordonnee(self):
         return (self.x, self.y, self.z)
-
 
 
 # -----------------------positionnnement (x,y,z)-----------------
@@ -220,40 +218,19 @@ def aleatoire():
 
 
 def creationCanon(tailleTourelle, formeTourelle, nombreCanon, tailleCanon, placement):
-    if (formeTourelle == FormeTourelle.DEMISPHERIQUE)
+    if (formeTourelle == FormeTourelle.DEMISPHERIQUE):
+        print('creation des canon à faire')
 
 
-def creationForme(nombre, piece1, piece2, positiony, positionz):
+def genereVaisseau(genre, nombre, piece1, piece2, positiony, positionz, espacement=5, grandissement=2):
     liste_piece = range(nombre)
     for piece in liste_piece:
+        print('piece {0}'.format(genre))
         taille1 = (aleatoire(), aleatoire(), aleatoire())
-        taille2 = (aleatoire(), aleatoire(), aleatoire())
-        tailleBoule = aleatoire()
-        position1 = Positionnement(5 * piece, positiony, positionz)
+        taille2 = (aleatoire(), grandissement * aleatoire(), aleatoire())
+        position1 = Positionnement(espacement * piece, positiony, positionz)
         ajouteForme(str(piece), taille1, position1.coordonnee(), piece1)
-        ajouteForme(str(piece), taille1, position1.coordonnee(), piece2)
-
-
-def genereVaisseau(genre, nombre, positiony, positionz):
-    if (genre == GenreVaisseau.AIR):
-        piece1 = Piece('cube', GenrePiece.CUBE)
-        piece2 = Piece('cylinde', GenrePiece.POINTE)
-        creationForme(nombre, piece1, piece2, positiony, positionz)
-
-    if (genre == GenreVaisseau.EAU):
-        piece1 = Piece('isosphere', GenrePiece.ICOSPHERE)
-        piece2 = Piece('sphere', GenrePiece.SPHERE)
-        creationForme(nombre, piece1, piece2, positiony, positionz)
-
-    if (genre == GenreVaisseau.TERRE):
-        piece1 = Piece('cube', GenrePiece.CUBE)
-        piece2 = Piece('pointe', GenrePiece.POINTE)
-        creationForme(nombre, piece1, piece2, positiony, positionz)
-
-    if (genre == GenreVaisseau.FEU):
-        piece1 = Piece('pointe', GenrePiece.POINTE)
-        piece2 = Piece('icosphere', GenrePiece.ICOSPHERE)
-        creationForme(nombre, piece1, piece2, positiony, positionz)
+        ajouteForme(str(piece), taille2, position1.coordonnee(), piece2)
 
 
 # -----------------------nettoyage de la console-----------------
@@ -266,13 +243,17 @@ nettoyagedeLaScene()
 vaisseau1 = Vaisseau('test1', GenreVaisseau.AIR)
 vaisseau1.affiche()
 
-genereVaisseau(GenreVaisseau.AIR, 20, 0, 0)
+piece1 = Piece('cube', GenrePiece.CUBE)
+piece2 = Piece('pointe', GenrePiece.POINTE)
+piece3 = Piece('isosphere', GenrePiece.ICOSPHERE)
+piece4 = Piece('pyramide', GenrePiece.PYRAMIDE)
+piece5 = Piece('cylindre', GenrePiece.CYLINDRE)
+piece6 = Piece('sphere', GenrePiece.SPHERE)
 
-genereVaisseau(GenreVaisseau.EAU, 20, 0, 40)
-
-genereVaisseau(GenreVaisseau.TERRE, 20, 100, 40)
-
-genereVaisseau(GenreVaisseau.FEU, 20, 100, 0)
+genereVaisseau(GenreVaisseau.AIR, 20, piece1, piece5, 0, 0)
+genereVaisseau(GenreVaisseau.EAU, 20, piece3, piece4, 0, 40, 8)
+genereVaisseau(GenreVaisseau.TERRE, 20, piece1, piece2, 100, 40)
+genereVaisseau(GenreVaisseau.FEU, 20, piece3, piece6, 100, 0, 3, 3)
 
 # creation de pieces test
 
