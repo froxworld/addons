@@ -32,6 +32,7 @@ class GenrePiece(Enum):
     ROND = 5
     BOULE = 6
     CYLINDRE = 7
+    POINTE = 8
 
 
 # -----------------------positionnnement (x,y,z)-----------------
@@ -142,23 +143,30 @@ def creationBiseau():
     bevel_modifier.limit_method = 'NONE'
 
 
-def ajouteForme(nom, taille, position, piece, type):
-    if type == GenrePiece.CUBE:
-        bpy.ops.mesh.primitive_cube_add(location=position)
+def ajouteForme(nom, taille, position, piece):
+    if piece.genre == GenrePiece.CUBE:
+        bpy.ops.mesh.primitive_cube_add(location=position, rotation=(0, aleatoire(), 0))
         creationBiseau()
         vaisseau1.ajoutePiece(nom, piece, position)
 
-    if type == GenrePiece.CYLINDRE:
-        bpy.ops.mesh.primitive_cylinder_add(location=position)
+    if piece.genre == GenrePiece.CYLINDRE:
+        bpy.ops.mesh.primitive_cylinder_add(location=position, rotation=(0, aleatoire(), 0))
         creationBiseau()
         vaisseau1.ajoutePiece(nom, piece, position)
 
-    if type == GenrePiece.BOULE:
-        bpy.ops.mesh.primitive_uv_sphere_add(radius=tailleBoule, enter_editmode=False, location=position)
+    if piece.genre == GenrePiece.BOULE:
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=aleatoire(), enter_editmode=False, location=position)
         vaisseau1.ajoutePiece(nom, piece, position)
+
+    if piece.genre == GenrePiece.POINTE:
+        bpy.ops.mesh.primitive_cone_add(vertices=aleatoire(), radius1=aleatoire(), radius2=aleatoire(), depth=2,
+                                        rotation=(0, aleatoire(), 0), location=position)
+    if piece.genre == GenrePiece.PYRAMIDE:
+        bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=aleatoire(), radius2=2, depth=1,
+                                        rotation=(0, aleatoire(), 0), location=position)
 
     bpy.context.active_object.name = nom
-    if type != GenrePiece.BOULE:
+    if piece.genre != GenrePiece.BOULE:
         bpy.data.objects[nom].scale = taille
 
 
@@ -168,8 +176,43 @@ def ajouteMilieu(position1, position2):
     intermediare = int((a + b) / 2)
     return (intermediare)
 
+
 def aleatoire():
-    return randint(1,5)
+    return randint(1, 5)
+
+
+def creationForme(nombre, piece1, piece2, positiony, positionz):
+    liste_piece = range(nombre)
+    for piece in liste_piece:
+        taille1 = (aleatoire(), aleatoire(), aleatoire())
+        taille2 = (aleatoire(), aleatoire(), aleatoire())
+        tailleBoule = aleatoire()
+        position1 = Positionnement(5 * piece, positiony, positionz)
+        ajouteForme(str(piece), taille1, position1.coordonnee(), piece1)
+        ajouteForme(str(piece), taille1, position1.coordonnee(), piece2)
+
+
+def genereVaisseau(genre, nombre, positiony, positionz):
+    if (genre == GenreVaisseau.AIR):
+        piece1 = Piece('cube_1', GenrePiece.CUBE)
+        piece2 = Piece('cylinde_2', GenrePiece.CYLINDRE)
+        creationForme(nombre, piece1, piece2, positiony, positionz)
+
+    if (genre == GenreVaisseau.EAU):
+        piece1 = Piece('cube_1', GenrePiece.POINTE)
+        piece2 = Piece('boule_2', GenrePiece.BOULE)
+        creationForme(nombre, piece1, piece2, positiony, positionz)
+
+    if (genre == GenreVaisseau.TERRE):
+            piece1 = Piece('cube_1', GenrePiece.CUBE)
+            piece2 = Piece('boule_2', GenrePiece.POINTE)
+            creationForme(nombre, piece1, piece2, positiony, positionz)
+
+    if (genre == GenreVaisseau.FEU):
+            piece1 = Piece('cube_1', GenrePiece.POINTE)
+            piece2 = Piece('boule_2', GenrePiece.PYRAMIDE)
+            creationForme(nombre, piece1, piece2, positiony, positionz)
+
 
 # -----------------------nettoyage de la console-----------------
 
@@ -181,33 +224,17 @@ nettoyagedeLaScene()
 vaisseau1 = Vaisseau('test1', GenreVaisseau.AIR)
 vaisseau1.affiche()
 
+genereVaisseau(GenreVaisseau.AIR, 20, 0, 0)
+
+genereVaisseau(GenreVaisseau.EAU, 20, 0, 40)
+
+genereVaisseau(GenreVaisseau.TERRE, 12, 100, 40)
+
+genereVaisseau(GenreVaisseau.FEU, 30, 100, 0)
+
+
 # creation de pieces test
 
-piece1 = Piece('cube_1', GenrePiece.CUBE)
-piece2 = Piece('cylinde_2', GenrePiece.CYLINDRE)
-piece3 = Piece('boule_3', GenrePiece.BOULE)
-
-liste_piece = range(50)
-
-for piece in liste_piece:
-    # creation de position de test
-    taille1 = (aleatoire(), aleatoire(), aleatoire())
-    taille2 = (5*aleatoire(), 5*aleatoire(), 5*aleatoire())
-    position1 = Positionnement(3*piece, 0, 0)
-    if (aleatoire()>1):
-        ajouteForme(str(piece), taille1, position1.coordonnee(), piece1, GenrePiece.CUBE)
-    else:
-        ajouteForme(str(piece), taille2, (position1.coordonnee()), piece2, GenrePiece.CYLINDRE)
-
-
-    # taille2 = (1, 1, 1)
-    # tailleBoule = Positionnement.coordonneeAleatoire(Positionnement, 1, 10)
-    #
-    # position2 = Positionnement(5 * piece * Positionnement.coordonneeAleatoire(Positionnement, 1, 3), 1, 1)
-    #
-    #
-    # position3 = ajouteMilieu(position1, position2)
-    # ajouteForme(str(piece), tailleBoule, (position3, position1.rendY(), position1.rendZ()), piece3, GenrePiece.BOULE)
 
 # affichage des infos d'un objet
 print(vaisseau1.__dict__)
