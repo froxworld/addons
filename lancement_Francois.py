@@ -30,9 +30,44 @@ class GenrePiece(Enum):
     TRIANGLE = 3
     PYRAMIDE = 4
     ROND = 5
-    BOULE = 6
+    SPHERE = 6
     CYLINDRE = 7
     POINTE = 8
+    ICOSPHERE = 9
+
+class Placement(Enum):
+    HAUT =1
+    BAS =2
+    DROITE =3
+    GAUCHE =4
+    ALEATOIRE =5
+
+class FormeTourelle(Enum):
+    SPHERIQUE =1
+    CUBIQUE =2
+    DEMISPHERIQUE =3
+    POINTUE =4
+
+
+
+
+class Tourelle: # definit tous les attributs des tourcelle
+    x=0
+    y=0
+    z=0
+    forme=''
+
+
+    def __init__(self, position_x, position_y, position_z):  # Notre méthode constructeur
+        """Pour l'instant, on ne va définir qu'un seul attribut"""
+        self.x = position_x
+        self.y = position_y
+        self.z = position_z
+        self.forme = FormeTourelle.SPHERIQUE
+
+    def coordonnee(self):
+        return (self.x, self.y, self.z)
+
 
 
 # -----------------------positionnnement (x,y,z)-----------------
@@ -154,7 +189,7 @@ def ajouteForme(nom, taille, position, piece):
         creationBiseau()
         vaisseau1.ajoutePiece(nom, piece, position)
 
-    if piece.genre == GenrePiece.BOULE:
+    if piece.genre == GenrePiece.SPHERE:
         bpy.ops.mesh.primitive_uv_sphere_add(radius=aleatoire(), enter_editmode=False, location=position)
         vaisseau1.ajoutePiece(nom, piece, position)
 
@@ -165,8 +200,11 @@ def ajouteForme(nom, taille, position, piece):
         bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=aleatoire(), radius2=2, depth=1,
                                         rotation=(0, aleatoire(), 0), location=position)
 
+    if piece.genre == GenrePiece.ICOSPHERE:
+        bpy.ops.mesh.primitive_ico_sphere_add(radius=aleatoire(), enter_editmode=False, location=position)
+
     bpy.context.active_object.name = nom
-    if piece.genre != GenrePiece.BOULE:
+    if piece.genre != GenrePiece.SPHERE:
         bpy.data.objects[nom].scale = taille
 
 
@@ -179,6 +217,10 @@ def ajouteMilieu(position1, position2):
 
 def aleatoire():
     return randint(1, 5)
+
+
+def creationCanon(tailleTourelle, formeTourelle, nombreCanon, tailleCanon, placement):
+    if (formeTourelle == FormeTourelle.DEMISPHERIQUE)
 
 
 def creationForme(nombre, piece1, piece2, positiony, positionz):
@@ -194,24 +236,24 @@ def creationForme(nombre, piece1, piece2, positiony, positionz):
 
 def genereVaisseau(genre, nombre, positiony, positionz):
     if (genre == GenreVaisseau.AIR):
-        piece1 = Piece('cube_1', GenrePiece.CUBE)
-        piece2 = Piece('cylinde_2', GenrePiece.CYLINDRE)
+        piece1 = Piece('cube', GenrePiece.CUBE)
+        piece2 = Piece('cylinde', GenrePiece.POINTE)
         creationForme(nombre, piece1, piece2, positiony, positionz)
 
     if (genre == GenreVaisseau.EAU):
-        piece1 = Piece('cube_1', GenrePiece.POINTE)
-        piece2 = Piece('boule_2', GenrePiece.BOULE)
+        piece1 = Piece('isosphere', GenrePiece.ICOSPHERE)
+        piece2 = Piece('sphere', GenrePiece.SPHERE)
         creationForme(nombre, piece1, piece2, positiony, positionz)
 
     if (genre == GenreVaisseau.TERRE):
-            piece1 = Piece('cube_1', GenrePiece.CUBE)
-            piece2 = Piece('boule_2', GenrePiece.POINTE)
-            creationForme(nombre, piece1, piece2, positiony, positionz)
+        piece1 = Piece('cube', GenrePiece.CUBE)
+        piece2 = Piece('pointe', GenrePiece.POINTE)
+        creationForme(nombre, piece1, piece2, positiony, positionz)
 
     if (genre == GenreVaisseau.FEU):
-            piece1 = Piece('cube_1', GenrePiece.POINTE)
-            piece2 = Piece('boule_2', GenrePiece.PYRAMIDE)
-            creationForme(nombre, piece1, piece2, positiony, positionz)
+        piece1 = Piece('pointe', GenrePiece.POINTE)
+        piece2 = Piece('icosphere', GenrePiece.ICOSPHERE)
+        creationForme(nombre, piece1, piece2, positiony, positionz)
 
 
 # -----------------------nettoyage de la console-----------------
@@ -228,10 +270,9 @@ genereVaisseau(GenreVaisseau.AIR, 20, 0, 0)
 
 genereVaisseau(GenreVaisseau.EAU, 20, 0, 40)
 
-genereVaisseau(GenreVaisseau.TERRE, 12, 100, 40)
+genereVaisseau(GenreVaisseau.TERRE, 20, 100, 40)
 
-genereVaisseau(GenreVaisseau.FEU, 30, 100, 0)
-
+genereVaisseau(GenreVaisseau.FEU, 20, 100, 0)
 
 # creation de pieces test
 
