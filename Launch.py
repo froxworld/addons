@@ -1,5 +1,4 @@
 import bpy
-from ObjectCreator import createCube, createSquarePlane
 from enum import Enum
 from abc import abstractmethod
 import numpy as np
@@ -33,21 +32,20 @@ class Cube(Piece):
 
 class Plane(Piece):
     
-    def __init__(self, name, location, size):
+    def __init__(self, name, location, size, nbPoint):
         super().__init__(name, location, pieceType.Plane)
         self.size = size
+        self.nbPoint = nbPoint
 
     def defineAllEdges(self):
         
-        myVertex = []
+        myVertices = []
         
-        myVertex.append((-self.size/2, self.size/2, 0))
-        myVertex.append((self.size/2, self.size/2, 0))
-        myVertex.append((-self.size/2, -self.size/2, 0))
-        myVertex.append((self.size/2, -self.size/2, 0))
-        #myVertex.append((self.size/3, -self.size/2, 0))
+        for i in range(self.nbPoint):
+            myVertices.append((self.size*np.cos(2*i*np.pi/self.nbPoint),
+            self.size*np.sin(2*i*np.pi/self.nbPoint),0))
         
-        return myVertex
+        return myVertices
     
     def create(self):
         
@@ -55,13 +53,13 @@ class Plane(Piece):
         # 0 linked to 1 -> 0,1
         # then 1 linked to 3, -> 1,3
         # etc.
-        myFace = [(0, 1, 3, 2)]
+        #myFace = [(0, 1, 3, 2)]
         #test
-        #myFace = [(0, 1, 3, 2, 4)]
+        verticesOrder = [tuple([ k for k in range(self.nbPoint)])]
         
         # Generate the mesh
         myMesh = bpy.data.meshes.new(self.name)
-        myMesh.from_pydata(self.defineAllEdges(), [], myFace)
+        myMesh.from_pydata(self.defineAllEdges(), [], verticesOrder)
         myMesh.update(calc_edges=True)
         
         # Link mesh to a scene object
@@ -71,11 +69,63 @@ class Plane(Piece):
         #finally, define the location of the object in the scene
         myObject.location = self.location
 
+class exPlane(Piece):
+    
+    def __init__(self, name, location, size, nbPoint, val):
+        super().__init__(name, location, pieceType.Plane)
+        self.size = size
+        self.nbPoint = nbPoint
+        self.val = val
+
+    def defineAllEdges(self):
+        
+        myVertices = []
+        
+        for i in range(self.nbPoint):
+            myVertices.append((self.size*np.cos(2*i*np.pi/self.nbPoint),
+            self.size*np.sin(2*i*np.pi/self.nbPoint),0))
+        
+        return myVertices
+    
+    def create(self):
+        
+        # link the edges to form the face
+        # 0 linked to 1 -> 0,1
+        # then 1 linked to 3, -> 1,3
+        # etc.
+        #myFace = [(0, 1, 3, 2)]
+        #test
+        verticesOrder = [tuple([ k for k in range(self.nbPoint)])]
+        
+        # Generate the mesh
+        myMesh = bpy.data.meshes.new(self.name)
+        myMesh.from_pydata(self.defineAllEdges(), [], verticesOrder)
+        myMesh.update(calc_edges=True)
+        
+        # Link mesh to a scene object
+        myObject = bpy.data.objects.new(self.name, myMesh)
+        bpy.context.collection.objects.link(myObject)
+        
+        #finally, define the location of the object in the scene
+        myObject.location = self.location
+        deselect_all()
+        bpy.data.objects[self.name].select_set(state=True)
+        bpy.ops.object.editmode_toggle()
+        bpy.ops.mesh.extrude_region_move(TRANSFORM_OT_translate={"value":(0,0,self.val),
+        "orient_type" : 'NORMAL'})
+        bpy.ops.object.editmode_toggle()
+
+def deselect_all():
+    
+    all_names = [item.name for item in bpy.data.objects]
+    
+    for object_name in all_names:
+        bpy.data.objects[object_name].select_set(state=False)
 
 def reset_scene():
     
     to_erase = ["MESH", "CURVE", "SURFACE"]
-
+    
     candidate_list = [item.name for item in bpy.data.objects 
                       if item.type in to_erase]
     
@@ -87,14 +137,15 @@ def reset_scene():
 
 if __name__ == "__main__":
     reset_scene()
-    c = Cube('monCube', (-1,-2,-10), (1,1,1))
+    c = Cube('monCube', (-5,-10,-5), (1,1,1))
     c.create()
-    p = Plane('monPlan', (1,1,-10), 2)
-    p.create()
+
     n = 10
     someRandomness = [1 if k == 0 else -1 for k in np.random.randint(0, 2, n)]
     someRandomness2 = [1 if k == 0 else -1 for k in np.random.randint(0, 2, n)]
-    for i in range(n):
-        Cube('monCube'+str(i), (i*2, 0, 0), (1,1,1)).create()
-        Cube('monCubeAleaY'+str(i), (i*2, 2*someRandomness[i], 0), (1,1,1)).create()
-        Cube('monCubeAleaZ'+str(i), (i*2, 0, 2*someRandomness2[i]), (1,1,1)).create()
+    #for i in range(n):
+    #    Cube('monCube'+str(i), (i*2, 0, 0), (1,1,1)).create()
+    #    Cube('monCubeAleaY'+str(i), (i*2, 2*someRandomness[i], 0), (1,1,1)).create()
+    #    Cube('monCubeAleaZ'+str(i), (i*2, 0, 2*someRandomness2[i]), (1,1,1)).create()
+    p = exPlane('monPlan', (0,0,0), 3, 10, 8)
+    p.create()
