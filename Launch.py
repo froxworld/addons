@@ -10,7 +10,10 @@ class pieceType(Enum):
     Cube = 0
     Plane = 1
     extrudedPlane = 2
-    Ball = 3
+    Icosphere = 3
+    City = 4
+    TerraBase = 5
+    Bubble = 6
 
 class Piece:
     
@@ -35,7 +38,7 @@ class Cube(Piece):
         bpy.context.active_object.name = self.name
         bpy.data.objects[self.name].scale = self.scale
 
-class Plane(Piece):
+class FlatForm(Piece):
     
     def __init__(self, name, type = pieceType.Plane, location = (0,0,0), rotation = (0,0,0), radius = 1, nbPoint = 4):
         super().__init__(name, type, location, rotation)
@@ -73,7 +76,7 @@ class Plane(Piece):
         #finally, define the location of the object in the scene
         myObject.location = self.location
         
-class extrudedPlane(Plane):
+class extrudedFlatForm(FlatForm):
     
     def __init__(self, name, location = (0,0,0), rotation = (0,0,0), radius = 1, nbPoint = 8, height = 1):
         super().__init__(name, pieceType.extrudedPlane, location, rotation, radius, nbPoint)
@@ -84,8 +87,8 @@ class extrudedPlane(Plane):
         Scene().select_one(self.name)
         bpy.ops.object.mode_set(mode='EDIT')
         bm = bmesh.from_edit_mesh(bpy.data.objects[self.name].data)
-        r = bmesh.ops.extrude_face_region(bm, geom=bm.faces)
-        verts = [e for e in r['geom'] if isinstance(e, bmesh.types.BMVert)]
+        region = bmesh.ops.extrude_face_region(bm, geom=bm.faces)
+        verts = [e for e in region['geom'] if isinstance(e, bmesh.types.BMVert)]
         bmesh.ops.translate(bm, vec=mathutils.Vector((0,0,self.height)), verts=verts)
         bmesh.update_edit_mesh(bpy.context.object.data)
         bpy.ops.object.mode_set(mode='OBJECT')
@@ -93,10 +96,10 @@ class extrudedPlane(Plane):
         bpy.ops.transform.rotate(value=self.rotation[1], orient_axis= "Y")
         bpy.ops.transform.rotate(value=self.rotation[2], orient_axis= "Z")
 
-class Ball(Piece):
+class Icosphere(Piece):
     
-    def __init__(self, name, location = (0,0,0), rotation = (0,0,0), radius = 1, subdivisions = 5, scale = (1,1,1)):
-        super().__init__(name, pieceType.Ball, location, rotation)
+    def __init__(self, name, location = (0,0,0), rotation = (0,0,0), radius = 1, subdivisions = 3, scale = (1,1,1)):
+        super().__init__(name, pieceType.Icosphere, location, rotation)
         self.radius = radius
         self.subdivisions = subdivisions
         self.scale = scale
@@ -108,26 +111,121 @@ class Ball(Piece):
         
 class Cloud(Piece):
     
-    def __init__(self, name, location = (0,0,0), rotation = (0,0,0), scale = (2,5,1), max_radius = 0.1, step = 20):
+    def __init__(self, name, location = (0,0,0), rotation = (0,0,0), scale = (2,3,1), step = 20):
         super().__init__(name, pieceType.Cube, location, rotation)
         self.scale = scale
         self.id = Scene().gen_id()
         self.step = step
     
     def create(self):
-        Ball(self.name+str(self.id), subdivisions = 5, scale = self.scale).create()
-        #sphere_max_size = np.array(self.scale)/2
-        sphere_max_size = np.array([1,1,1])
+        Icosphere(self.name + str(self.id), subdivisions = 2, scale = self.scale).create()
+        sphere_max_size = np.array(self.scale)/0.5
         min_val = 0.4
         max_val = 0.6
         for i in np.linspace(np.pi, 2*np.pi, self.step):
             for j in np.linspace(0, 2*np.pi, self.step):
                 sphere_scale = [k*min(max(min_val,np.random.uniform()),max_val) for k in sphere_max_size]
-                Ball(self.name+str(self.id)+Scene().gen_id(5), location = (self.scale[0]*np.cos(i)*np.sin(j), self.scale[1]*np.sin(i)*np.sin(j),self.scale[2]*np.cos(j)), scale = sphere_scale).create()
+                Icosphere(self.name + str(self.id) + Scene().gen_id(5), location = (self.scale[0] * np.cos(i) * np.sin(j), self.scale[1] * np.sin(i) * np.sin(j), self.scale[2] * np.cos(j)), scale = sphere_scale).create()
         Scene().select_object_begin_name(self.name+str(self.id))
         bpy.ops.object.join()
         bpy.context.active_object.name = self.name
+        bpy.data.objects[self.name].location = self.location
 
+class Cylinder(Piece):
+    
+    def __init__(self, name, location = (0,0,0), rotation = (0,0,0), scale = (1,1,2)):
+        super().__init__(name, pieceType.Cube, location, rotation)
+        self.scale = scale
+    
+    def create(self):
+        bpy.ops.mesh.primitive_cylinder_add(location = self.location, rotation = self.rotation)
+        bpy.context.active_object.name = self.name
+        bpy.data.objects[self.name].scale = self.scale
+
+class City(Piece):
+    
+    def __init__(self, name, location = (0,0,0), rotation = (0,0,0), scale=2, subdivisions = 5, skyscraper = 20):
+        super().__init__(name, pieceType.City, location, rotation)
+        self.scale = scale
+        self.subdivisions = subdivisions
+        self.skyscraper = skyscraper
+        
+    def create(self):
+        Icosphere(self.name, location = self.location, subdivisions = self.subdivisions, scale = (self.scale, self.scale, self.scale)).create()
+    
+        bpy.ops.object.mode_set(mode='EDIT')
+        bm = bmesh.from_edit_mesh(bpy.context.object.data)
+
+        edges = []
+        
+        ret = bmesh.ops.bisect_plane(bm, geom=bm.verts[:]+bm.edges[:]+bm.faces[:], plane_co=(0,0,0), plane_no=(0,0,1), clear_outer= True)
+        bmesh.ops.split_edges(bm, edges=[e for e in ret['geom_cut'] if isinstance(e, bmesh.types.BMEdge)])
+        bmesh.update_edit_mesh(bpy.context.object.data)
+        bpy.ops.mesh.separate(type='LOOSE')
+        bpy.ops.mesh.primitive_circle_add(enter_editmode=False, location = self.location, fill_type='NGON', radius = self.scale)
+        size_skyscraper = self.scale/(2*self.skyscraper)
+        for x_step in np.linspace(-self.scale, self.scale, self.skyscraper):
+            for y_step in np.linspace(-self.scale, self.scale, self.skyscraper):
+                if (np.abs(x_step)+size_skyscraper)**2+(np.abs(y_step)+size_skyscraper)**2 < self.scale**2:
+                    height_skyscraper = np.random.uniform(0, self.scale/4)
+                    #height_skyscraper = self.scale-((np.abs(y_step)>=np.abs(x_step))*np.abs(y_step)+(np.abs(y_step)<np.abs(x_step))*np.abs(x_step))
+                    bpy.ops.mesh.primitive_cube_add(enter_editmode=False, location = (self.location[0]+x_step, self.location[1]+y_step, self.location[2]+height_skyscraper))
+                    bpy.ops.transform.resize(value=(size_skyscraper, size_skyscraper, height_skyscraper))
+        bpy.ops.object.mode_set(mode='OBJECT')
+        
+class TerraBase(Piece):
+    def __init__(self, name, location = (0,0,0), rotation = (0,0,0), scale_city = 0.5, subdivisions = 5, skyscraper = 15, radius = 4, nbPoint = 6):
+        super().__init__(name, pieceType.TerraBase, location, rotation)
+        self.radius = radius
+        self.nbPoint = nbPoint
+        self.scale_city = scale_city
+        self.subdivisions = subdivisions
+        self.skyscraper = skyscraper
+        self.id = Scene().gen_id()
+    
+    def create(self):
+        Icosphere(self.name + self.id +'base', subdivisions = self.subdivisions).create()
+        for i in range(self.nbPoint):
+            City(self.name + self.id +'base_Terre'+str(i), location = (self.radius*np.cos(2*i*np.pi/self.nbPoint),self.radius*np.sin(2*i*np.pi/self.nbPoint),0), scale = self.scale_city, skyscraper = self.skyscraper).create()
+            #City(self.name + self.id +'base_Terre'+str(i)+'bas', location = (self.radius*np.cos(2*i*np.pi/self.nbPoint),self.radius*np.sin(2*i*np.pi/self.nbPoint),-self.radius), scale = self.scale_city, skyscraper = self.skyscraper).create()
+            #City(self.name + self.id +'base_Terre'+str(i)+'haut', location = (self.radius*np.cos(2*i*np.pi/self.nbPoint),self.radius*np.sin(2*i*np.pi/self.nbPoint),self.radius), scale = self.scale_city, skyscraper = self.skyscraper).create()
+            
+        for j in range(self.nbPoint):
+            Cylinder(self.name + self.id +'lien'+str(j), location = (0,0,-0.1), rotation = (2*j*np.pi/self.nbPoint,np.pi/2,0), scale = (0.1,0.1,self.radius)).create()
+            #Cylinder(self.name + self.id +'lien'+str(j)+'oblique', location = (0,0,-0.1), rotation = (0,np.pi/4,2*j*np.pi/self.nbPoint), scale = (0.1,0.1,np.sqrt(2)*self.radius)).create()
+        
+        Scene().select_object_begin_name(self.name+str(self.id))
+        bpy.ops.object.join()
+        bpy.context.active_object.name = self.name
+        bpy.data.objects[self.name].location = self.location
+
+class Bubble(Piece):
+    
+    def __init__(self, name, location = (0,0,0), rotation = (0,0,0), radius = 2, nbStep = 3, nbExtrusion = 4, ratio_radius = 0.75):
+        super().__init__(name, pieceType.Bubble, location, rotation)
+        self.radius = radius
+        self.nbStep = nbStep
+        self.nbExtrusion = nbExtrusion
+        self.id = Scene.gen_id(3)
+        self.ratio_radius = ratio_radius
+        
+    def create(self):
+        Icosphere(self.name+ self.id+'base', scale = (self.radius, self.radius, self.radius)).create()
+        new_radius = self.radius*self.ratio_radius
+        for indexBubble in range(self.nbExtrusion):
+            theta = np.random.uniform(0, np.pi)
+            phi = np.random.uniform(0, 2*np.pi)
+            r = 3*self.radius/2+0.1
+            location = (r * np.cos(theta) * np.sin(phi), r * np.sin(theta) * np.sin(phi), r * np.cos(phi))
+            if self.nbStep == 0:
+                Icosphere(self.name+self.id+'s'+str(indexBubble), location = location, scale = (new_radius, new_radius, new_radius)).create()
+            else:
+                Bubble(self.name+self.id+'b'+str(indexBubble), location = location, radius = new_radius, nbStep = self.nbStep-1, nbExtrusion = self.nbExtrusion).create()
+        Scene().select_object_begin_name(self.name+str(self.id))
+        bpy.ops.object.join()
+        bpy.context.active_object.name = self.name
+        bpy.data.objects[self.name].location = self.location
+        
 class Scene(object):
     
     #Singleton pattern
@@ -196,11 +294,9 @@ class Scene(object):
         
 if __name__ == "__main__":
     Scene().reset_scene()
+    #initiate a first piece
     c = Cube(name = 'monCube', location = (-10,-10,-5), scale = (1,1,1), rotation = (0,np.pi/4,0))
-    c.create()
-    n = 10
-    someRandomness = [1 if k == 0 else -1 for k in np.random.randint(0, 2, n)]
-    someRandomness2 = [1 if k == 0 else -1 for k in np.random.randint(0, 2, n)]
-    p = extrudedPlane(name = 'monPlan', location = (-20,20,20), rotation = (3*np.pi/2,0,0), radius = 2, nbPoint = 5, height = 20)
-    p.create()
-    Cloud("nuage", scale = (2, 3, 1), step = 20).create()
+    #FlatForm(name = 'monTest', location = (0,0,0), radius = 2, nbPoint = 28).create()
+    dist = 10
+    TerraBase('myTerrraBase', location = (dist, dist, 0), radius = 3, skyscraper = 10).create()
+    Bubble('myBubble', location = (-dist, -dist, 0), nbStep = 3, ratio_radius = 0.6, nbExtrusion = 4).create()
